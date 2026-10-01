@@ -1,7 +1,9 @@
 package com.hashir.tennistracker.match;
 
 import com.hashir.tennistracker.common.ApiResponse;
+import com.hashir.tennistracker.common.Pagination;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,8 +19,11 @@ public class MatchController {
     }
 
     @GetMapping
-    public ApiResponse<List<MatchResponse>> getAllMatches() {
-        return ApiResponse.success(matchService.getAllMatches());
+    public ApiResponse<List<MatchResponse>> getAllMatches(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int limit) {
+        Page<MatchResponse> result = matchService.getAllMatches(page, limit);
+        return ApiResponse.paginated(result.getContent(), Pagination.fromPage(result));
     }
 
     @PostMapping

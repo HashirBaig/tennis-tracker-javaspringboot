@@ -1,12 +1,12 @@
 package com.hashir.tennistracker.match;
 
 import com.hashir.tennistracker.player.Player;
-import com.hashir.tennistracker.player.PlayerNotFoundException;
 import com.hashir.tennistracker.player.PlayerRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 public class MatchService {
@@ -33,10 +33,8 @@ public class MatchService {
             throw new IllegalArgumentException("Games won cannot exceed the total number of games");
         }
 
-        Player playerOne = playerRepository.findByPlayerName(playerOneName)
-                .orElseThrow(() -> new PlayerNotFoundException(playerOneName));
-        Player playerTwo = playerRepository.findByPlayerName(playerTwoName)
-                .orElseThrow(() -> new PlayerNotFoundException(playerTwoName));
+        Player playerOne = findOrCreatePlayer(playerOneName);
+        Player playerTwo = findOrCreatePlayer(playerTwoName);
 
         Match match = new Match();
         match.setPlayerOne(playerOne);
@@ -50,9 +48,19 @@ public class MatchService {
     }
 
     @Transactional(readOnly = true)
-    public List<MatchResponse> getAllMatches() {
-        return matchRepository.findAllWithPlayers().stream()
-                .map(MatchResponse::fromEntity)
-                .toList();
+    public Page<MatchResponse> getAllMatches(int page, int limit) {
+        int safePage = Math.max(page, 1);
+        int safeLimit = Math.clamp(limit, 1, 100);
+        Pageable pageable = PageRequest.of(safePage - 1, safeLimit);
+        return matchRepository.findAllWithPlayers(pageable).map(MatchResponse::fromEntity);
+    }
+
+    private Player findOrCreatePlayer(String name) {
+        return playerRepository.findByPlayerName(name)
+                .orElseGet(() -> {
+                    Player player = new Player();
+                    player.setPlayerName(name);
+                    return playerRepository.save(player);
+                });
     }
 }
