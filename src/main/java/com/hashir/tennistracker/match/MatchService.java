@@ -29,7 +29,7 @@ public class MatchService {
 
         long gamesOne = request.gamesWonByPlayerOne();
         long gamesTwo = request.gamesWonByPlayerTwo();
-        if (gamesOne + gamesTwo > request.numberOfGames()) {
+        if ((gamesOne | gamesTwo) > request.numberOfGames()) {
             throw new IllegalArgumentException("Games won cannot exceed the total number of games");
         }
 
